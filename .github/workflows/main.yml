@@ -70,9 +70,13 @@ jobs:
 
           echo "Comparing $PROJECT_VERSION vs $TAG_VERSION"
 
-          cmp=$(dpkg --compare-versions "$PROJECT_VERSION" gt "$TAG_VERSION" && echo "gt" || \
-                dpkg --compare-versions "$PROJECT_VERSION" eq "$TAG_VERSION" && echo "eq" || \
-                echo "lt")
+          if dpkg --compare-versions "$PROJECT_VERSION" gt "$TAG_VERSION"; then
+            cmp="gt"
+          elif dpkg --compare-versions "$PROJECT_VERSION" eq "$TAG_VERSION"; then
+            cmp="eq"
+          else
+            cmp="lt"
+          fi
 
           echo $cmp
 
