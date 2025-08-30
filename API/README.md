@@ -7,7 +7,7 @@ Quick start (requires .NET SDK installed):
 1. Open a command prompt and navigate to the project folder:
 
 ```cmd
-cd /d f:\SelfPostEdu\Programming\cs_test\KiotaTest\API\Api
+cd /d API\Api
 ```
 
 2. Restore and run:

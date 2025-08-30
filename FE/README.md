@@ -12,7 +12,7 @@ This project was bootstrapped with Vite + React.
 ## Build for production
 
 ```cmd
-cd /d f:\SelfPostEdu\Programming\cs_test\KiotaTest\FE
+cd /d FE
 npm install
 npm run build
 ```
