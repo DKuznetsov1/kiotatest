@@ -1,0 +1,130 @@
+name: Generate and Publish http-client libs
+
+on:
+  push:
+    paths:
+      - 'API/Api/**'
+    branches:
+      - master
+
+jobs:
+  generate-and-publish:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+
+      - name: Fetch all tags (without full history)
+        run: git fetch --tags
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
+
+      - name: Install Swashbuckle CLI tool
+        run: dotnet tool install --global Swashbuckle.AspNetCore.Cli
+
+       #- name: Install Kiota CLI
+      #  run: dotnet tool install --global Microsoft.OpenApi.Kiota
+
+      - name: Install Kiota (GH action) 
+        uses: microsoft/setup-kiota@v0.5.0
+
+      - name: Extract version from .csproj
+        id: version
+        run: |
+          VERSION=$(xmllint --xpath "string(//Project/PropertyGroup/Version)" API/Api/Api.csproj)
+          echo "VERSION=$VERSION" >> $GITHUB_ENV
+          echo "Project version: $VERSION"
+
+      - name: Get last tag via git describe
+        id: lasttag
+        run: |
+          LAST_TAG=$(git describe --abbrev=0 --tags 2>/dev/null || echo "")
+          echo "LAST_TAG=$LAST_TAG" >> $GITHUB_ENV
+          echo "Last tag: $LAST_TAG"
+
+      - name: Compare project version and last tag
+        run: |
+          PROJECT_VERSION=${{ env.VERSION }}
+          LAST_TAG=${{ env.LAST_TAG }}
+
+          if [ -z "$LAST_TAG" ]; then
+            TAG_VERSION="0.0.0"
+            echo "No tags found. Using default tag version $TAG_VERSION = 0.0.0"
+          else
+            TAG_VERSION="${LAST_TAG#v}"
+          fi
+
+          echo "Comparing $PROJECT_VERSION vs $TAG_VERSION"
+
+          cmp=$(dpkg --compare-versions "$PROJECT_VERSION" gt "$TAG_VERSION" && echo "gt" || \
+                dpkg --compare-versions "$PROJECT_VERSION" eq "$TAG_VERSION" && echo "eq" || \
+                echo "lt")
+
+          if [ "$cmp" = "gt" ]; then
+            echo "✅ Creating new tag v$PROJECT_VERSION"
+            git config user.name "github-actions"
+            git config user.email "github-actions@github.com"
+            git tag "v$PROJECT_VERSION"
+            git push origin "v$PROJECT_VERSION"
+          elif [ "$cmp" = "eq" ]; then
+            echo "✅ Tag already exists. Continuing."
+          else
+            echo "❌ Project version ($PROJECT_VERSION) is less than latest tag ($TAG_VERSION)"
+            exit 1
+          fi
+
+      - name: Generate Swagger file
+        run: |
+          dotnet swagger tofile --output swagger.json Api/bin/Debug/net8.0/Api.dll v1
+
+      - name: Calculate patch number
+        run: |
+          PATCH=$(git rev-list v${{ env.VERSION }}..HEAD --count)
+          MAJOR_MINOR=$(echo "${{ env.VERSION }}" | cut -d '.' -f 1,2)
+          FULL_VERSION="$MAJOR_MINOR.$PATCH"
+          echo "FULL_VERSION=$FULL_VERSION" >> $GITHUB_ENV
+          echo "Full version to use: $FULL_VERSION"
+
+      - name: Update kiota clients in the repository
+        run: kiota generate --language typescript --openapi ./swagger.json --output ./typescript-client --class-name ApiClient
+        working-directory: API
+  
+    
+     # - name: Generate TypeScript client via Kiota
+      #  run: |
+      #    mkdir -p typescript-client
+       #   kiota generate \
+       #     --language typescript \
+       #     --class-name ApiClient \
+       #     --namespace client \
+       #     --openapi swagger.json \
+       #     --output typescript-client
+
+      - name: Set version in package.json
+        run: |
+          cd typescript-client
+          npm init -y
+          npm pkg set name="@${{ github.repository_owner }}/api-client"
+          npm pkg set version="${{ env.FULL_VERSION }}"
+          npm pkg set repository.type=git
+          npm pkg set repository.url=https://github.com/${{ github.repository }}.git
+
+      - name: Configure npm for GitHub Packages
+        run: |
+          echo "@${{ github.repository_owner }}:registry=https://npm.pkg.github.com" > typescript-client/.npmrc
+          echo "//npm.pkg.github.com/:_authToken=${NODE_AUTH_TOKEN}" >> typescript-client/.npmrc
+      
+      - name: Publish to GitHub npm registry
+        run: |
+          cd typescript-client
+          npm publish --access public
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+
