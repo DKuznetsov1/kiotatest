@@ -4,7 +4,7 @@ on:
   push:
     paths:
       - 'API/Api/**'
-      - '.github\workflows\main.yml'
+      - '.github/workflows/main.yml'
     branches:
       - master
   workflow_dispatch:
