@@ -36,6 +36,9 @@ jobs:
       - name: Add dotnet tools to PATH
         run: echo "$HOME/.dotnet/tools" >> $GITHUB_PATH
 
+      - name: Debug PATH
+        run: echo $PATH && ls $HOME/.dotnet/tools
+
       - name: Check swagger CLI
         run: dotnet swagger --help
 
