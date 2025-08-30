@@ -65,6 +65,9 @@ jobs:
             TAG_VERSION="${LAST_TAG#v}"
           fi
 
+          echo "Project version: $PROJECT_VERSION"
+          echo "Latest tag: $TAG_VERSION"
+
           echo "Comparing $PROJECT_VERSION vs $TAG_VERSION"
 
           cmp=$(dpkg --compare-versions "$PROJECT_VERSION" gt "$TAG_VERSION" && echo "gt" || \
