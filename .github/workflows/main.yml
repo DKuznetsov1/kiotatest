@@ -6,6 +6,7 @@ on:
       - 'API/Api/**'
     branches:
       - master
+  workflow_dispatch:
 
 jobs:
   generate-and-publish:
