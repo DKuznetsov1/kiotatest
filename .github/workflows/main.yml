@@ -32,9 +32,15 @@ jobs:
 
       - name: Install Swashbuckle CLI tool
         run: dotnet tool install --global Swashbuckle.AspNetCore.Cli
+      
+      - name: Add dotnet tools to PATH
+        run: echo "$HOME/.dotnet/tools" >> $GITHUB_PATH
+
+      - name: Check swagger CLI
+        run: dotnet swagger --help
 
        #- name: Install Kiota CLI
-      #  run: dotnet tool install --global Microsoft.OpenApi.Kiota
+       #  run: dotnet tool install --global Microsoft.OpenApi.Kiota
 
       - name: Install Kiota
         uses: microsoft/setup-kiota@v0.5.0
