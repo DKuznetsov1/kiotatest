@@ -74,6 +74,8 @@ jobs:
                 dpkg --compare-versions "$PROJECT_VERSION" eq "$TAG_VERSION" && echo "eq" || \
                 echo "lt")
 
+          echo $cmp
+
           if [ "$cmp" = "gt" ]; then
             echo "✅ Creating new tag v$PROJECT_VERSION"
             git config user.name "github-actions"
