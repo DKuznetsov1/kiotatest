@@ -7,7 +7,11 @@
   </PropertyGroup>
 
   <ItemGroup>
-  <PackageReference Include="Swashbuckle.AspNetCore" Version="6.5.0" />
+    <PackageReference Include="Swashbuckle.AspNetCore" Version="9.0.4" />
   </ItemGroup>
+
+  <PropertyGroup>
+	<Version>0.1.0</Version>
+  </PropertyGroup>
 
 </Project>
