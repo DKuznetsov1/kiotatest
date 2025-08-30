@@ -31,8 +31,11 @@ jobs:
        #- name: Install Kiota CLI
       #  run: dotnet tool install --global Microsoft.OpenApi.Kiota
 
-      - name: Install Kiota (GH action) 
+      - name: Install Kiota
         uses: microsoft/setup-kiota@v0.5.0
+
+      - name: Install xmllint (for parsing csproj xml to get version)
+        run: sudo apt-get update && sudo apt-get install -y libxml2-utils
 
       - name: Extract version from .csproj
         id: version
