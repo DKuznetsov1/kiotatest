@@ -31,6 +31,14 @@ jobs:
       - name: List tags
         run: git tag
 
+       - name: Get last tag via git describe
+        id: lasttag
+        run: |
+          LAST_TAG=$(git describe --abbrev=0 --tags --all 2>/dev/null || echo "")
+          echo "LAST_TAG=$LAST_TAG" >> $GITHUB_ENV
+          echo "Last tag: $LAST_TAG"
+
+
       - name: Setup .NET
         uses: actions/setup-dotnet@v4
         with:
@@ -60,13 +68,6 @@ jobs:
           VERSION=$(xmllint --xpath "string(//Project/PropertyGroup/Version)" API/Api/Api.csproj)
           echo "VERSION=$VERSION" >> $GITHUB_ENV
           echo "Project version: $VERSION"
-
-      - name: Get last tag via git describe
-        id: lasttag
-        run: |
-          LAST_TAG=$(git describe --abbrev=0 --tags 2>/dev/null || echo "")
-          echo "LAST_TAG=$LAST_TAG" >> $GITHUB_ENV
-          echo "Last tag: $LAST_TAG"
 
       - name: Compare project version and last tag
         run: |
