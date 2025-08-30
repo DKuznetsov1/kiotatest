@@ -1,0 +1,25 @@
+# .NET build artifacts
+bin/
+obj/
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+*.vs/
+# Visual Studio Code
+.vscode/
+# NuGet packages
+*.nupkg
+# Others
+*.log
+*.DS_Store
+# Rider
+.idea/
+# Test results
+TestResults/
+# Static web assets
+wwwroot/
+# Publish output
+publish/
+# Secret files
+secrets.json
