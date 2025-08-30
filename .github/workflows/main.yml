@@ -36,11 +36,8 @@ jobs:
       - name: Add dotnet tools to PATH
         run: echo "$HOME/.dotnet/tools" >> $GITHUB_PATH
 
-      - name: Debug PATH
-        run: echo $PATH && ls $HOME/.dotnet/tools
-
       - name: Check swagger CLI
-        run: dotnet swagger --help
+        run: swagger --help
 
        #- name: Install Kiota CLI
        #  run: dotnet tool install --global Microsoft.OpenApi.Kiota
@@ -102,7 +99,7 @@ jobs:
 
       - name: Generate Swagger file
         run: |
-          dotnet swagger tofile --output swagger.json Api/bin/Debug/net8.0/Api.dll v1
+          swagger tofile --output swagger.json Api/bin/Debug/net8.0/Api.dll v1
 
       - name: Calculate patch number
         run: |
