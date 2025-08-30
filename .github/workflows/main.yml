@@ -25,6 +25,12 @@ jobs:
       - name: Fetch all tags (without full history)
         run: git fetch --tags
 
+      - name: Show current branch
+        run: git branch --show-current
+
+      - name: List tags
+        run: git tag
+
       - name: Setup .NET
         uses: actions/setup-dotnet@v4
         with:
