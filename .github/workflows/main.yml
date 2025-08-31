@@ -122,7 +122,3 @@ jobs:
         run: |
           cd typescript-client
           npm publish --access public
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-
