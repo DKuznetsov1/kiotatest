@@ -1,32 +1,29 @@
-import { DummyType } from '@local/dummy-package';
-import { useEffect, useState } from 'react';
+import { FC, useEffect, useState } from 'react';
+import { AnonymousAuthenticationProvider } from "@microsoft/kiota-abstractions";
+import { FetchRequestAdapter } from "@microsoft/kiota-http-fetchlibrary";
+import { ApiClient, createApiClient } from '@dkuznetsov1/api-client';
+import { SampleItem } from '@dkuznetsov1/api-client/dist/models';
 
-interface SampleItem {
-  id: number;
-  name: string;
-  description?: string;
-}
-
-function App() {
-  const [items, setItems] = useState<SampleItem[]>([]);
-  // Example usage of DummyType
-  const dummyItem: DummyType = { id: 123, name: 'From DummyPackage' };
+const App: FC = () => {
+  const [items, setItems] = useState<(SampleItem | undefined)[] | undefined>([]);
   useEffect(() => {
-    fetch('https://localhost:49229/api/sample')
-      .then(res => res.json())
-      .then(setItems)
-      .catch(() => setItems([]));
+    const authProvider = new AnonymousAuthenticationProvider();
+    const adapter = new FetchRequestAdapter(authProvider);
+    adapter.baseUrl = 'https://localhost:49229';
+    const client = createApiClient(adapter) as ApiClient;  
+
+    client.api.sample.get()
+      .then(setItems);
   }, []);
+  
   return (
     <div>
       <h1>Sample API Items</h1>
       <ul>
-        {items.map(item => (
-          <li key={item.id}>{item.name}: {item.description}</li>
+        {items && items.map(item => (
+          item && <li key={item.id}>{item.name}: {item.description}</li>
         ))}
       </ul>
-      <h2>DummyType Example</h2>
-      <div>{dummyItem.id}: {dummyItem.name}</div>
     </div>
   );
 }
