@@ -49,17 +49,17 @@ public record SampleItem
 {
     public int Id { get; init; }
     public string Name { get; set; } = string.Empty;
-    public string? Description { get; set; }
+    public string Description { get; set; }
 }
 
 public record SampleItemCreate
 {
     public string Name { get; init; } = string.Empty;
-    public string? Description { get; init; }
+    public string Description { get; init; }
 }
 
 public record SampleItemUpdate
 {
-    public string? Name { get; init; }
-    public string? Description { get; init; }
+    public string Name { get; init; }
+    public string Description { get; init; }
 }
