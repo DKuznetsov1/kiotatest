@@ -102,8 +102,6 @@ jobs:
           echo "Fetching current published version for $PACKAGE_NAME..."
 
           NPM_VERSION=$(npm view "$PACKAGE_NAME" version || echo "")
-          echo "NPM version: $NPM_VERSION"
-
           PROJECT_VERSION="${{ env.VERSION }}"
 
           if [ -z "$NPM_VERSION" ]; then
