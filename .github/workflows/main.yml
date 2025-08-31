@@ -33,12 +33,6 @@ jobs:
       - name: Add dotnet tools to PATH
         run: echo "$HOME/.dotnet/tools" >> $GITHUB_PATH
 
-      # - name: Check swagger CLI
-      #   run: swagger --help
-
-       #- name: Install Kiota CLI
-       #  run: dotnet tool install --global Microsoft.OpenApi.Kiota
-
       - name: Install Kiota
         uses: microsoft/setup-kiota@v0.5.0
 
@@ -47,8 +41,9 @@ jobs:
 
       - name: Extract version from .csproj
         id: get-project-version
+        working-directory: API
         run: |
-          VERSION=$(xmllint --xpath "string(//Project/PropertyGroup/Version)" API/Api/Api.csproj)
+          VERSION=$(xmllint --xpath "string(//Project/PropertyGroup/Version)" Api/Api.csproj)
           echo "VERSION=$VERSION" >> $GITHUB_ENV
           echo "Project version: $VERSION"
 
@@ -91,17 +86,20 @@ jobs:
           fi
 
       - name: Build API project
-        run: dotnet build API/Api/Api.csproj --configuration Release
+        working-directory: API
+        run: dotnet build Api/Api.csproj --configuration Release
 
       - name: Generate Swagger file
+        working-directory: API
         run: |
-          swagger tofile --output API/swagger.json API/Api/bin/Release/net8.0/Api.dll v1
+          swagger tofile --output swagger.json Api/bin/Release/net8.0/Api.dll v1
 
       - name: Update kiota clients in the repository
-        run: kiota generate --language typescript --openapi ./swagger.json --output ./typescript-client --class-name ApiClient
         working-directory: API
+        run: kiota generate --language typescript --openapi ./swagger.json --output ./typescript-client --class-name ApiClient
     
       - name: Set version in package.json
+        working-directory: API
         run: |
           cd typescript-client
           npm init -y
