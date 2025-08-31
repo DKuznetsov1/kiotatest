@@ -7,7 +7,7 @@ on:
       - '.github/workflows/main.yml'
     branches:
       - master
-  workflow_dispatch:
+  workflow_dispatch: {}
 
 jobs:
   generate-and-publish:
