@@ -90,9 +90,12 @@ jobs:
             exit 1
           fi
 
+      - name: Build API project
+        run: dotnet build API/Api/Api.csproj --configuration Release
+
       - name: Generate Swagger file
         run: |
-          swagger tofile --output swagger.json API/Api/bin/Debug/net8.0/Api.dll v1
+          swagger tofile --output swagger.json API/Api/bin/Release/net8.0/Api.dll v1
 
       - name: Update kiota clients in the repository
         run: kiota generate --language typescript --openapi ./swagger.json --output ./typescript-client --class-name ApiClient
