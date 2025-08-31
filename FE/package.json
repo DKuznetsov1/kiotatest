@@ -8,7 +8,7 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "@dkuznetsov1/api-client": "^0.1.1",
+    "@dkuznetsov1/api-client": "^0.1.3",
     "@microsoft/kiota-abstractions": "^1.0.0-preview.97",
     "@microsoft/kiota-http-fetchlibrary": "^1.0.0-preview.97",
     "@microsoft/kiota-serialization-form": "^1.0.0-preview.97",
