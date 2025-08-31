@@ -31,13 +31,16 @@ jobs:
       - name: List tags
         run: git tag
 
-      - name: Get last tag via git describe
-        id: lasttag
-        run: |
-          LAST_TAG=$(git describe --abbrev=0 --tags 2>/dev/null || echo "")
-          echo "LAST_TAG=$LAST_TAG" >> $GITHUB_ENV
-          echo "Last tag: $LAST_TAG"
+      - name: Get latest tag
+        id: get_tag
+        uses: actions-ecosystem/action-get-latest-tag@v1.6.0
+        with:
+          semver_only: false
 
+      - name: Export latest tag to env
+        run: |
+          echo "LAST_TAG=${{ steps.get_tag.outputs.tag }}" >> $GITHUB_ENV
+          echo "Last tag: ${{ steps.get_tag.outputs.tag }}"
 
       - name: Setup .NET
         uses: actions/setup-dotnet@v4
