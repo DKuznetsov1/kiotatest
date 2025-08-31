@@ -8,8 +8,8 @@ public class SampleController : ControllerBase
 {
     private static readonly List<SampleItem> Items = new()
     {
-        new SampleItem { Id = 1, Name = "First", Description = "First item" },
-        new SampleItem { Id = 2, Name = "Second", Description = "Second item" }
+        new SampleItem { Id = 1, Name = "First", Description = "First item", NewProp = $"that's new prop {1}" },
+        new SampleItem { Id = 2, Name = "Second", Description = "Second item", NewProp = $"that's new prop {2}" }
     };
 
     [HttpGet]
@@ -19,9 +19,18 @@ public class SampleController : ControllerBase
     }
 
     [HttpGet("{id:int}")]
-    public ActionResult<SampleItem> GetById(int id)
+    [ProducesResponseType(typeof(SampleItem), StatusCodes.Status200OK)]
+    public IActionResult GetById(int id)
     {
         var item = Items.FirstOrDefault(i => i.Id == id);
+        return item is null ? NotFound() : Ok(item);
+    }
+
+
+    [HttpGet("with-description/{desc}")]
+    public ActionResult<SampleItem> GetByDesc(string desc)
+    {
+        var item = Items.FirstOrDefault(i => i.Description.Equals(desc, StringComparison.OrdinalIgnoreCase));
         return item is null ? NotFound() : Ok(item);
     }
 
@@ -50,6 +59,8 @@ public record SampleItem
     public int Id { get; init; }
     public string Name { get; set; } = string.Empty;
     public string Description { get; set; }
+
+    public string NewProp { get; set; }
 }
 
 public record SampleItemCreate
