@@ -50,7 +50,7 @@ jobs:
       - name: Calculate package version from npm
         id: get-npm-version
         run: |
-          PACKAGE_NAME="@${{ env.PACKAGE_NAME }}"
+          PACKAGE_NAME="${{ env.PACKAGE_NAME }}"
           echo "Fetching current published version for $PACKAGE_NAME..."
 
           NPM_VERSION=$(npm view "$PACKAGE_NAME" version 2>/dev/null || echo "")
@@ -103,7 +103,7 @@ jobs:
         run: |
           cd typescript-client
           npm init -y
-          npm pkg set name="@${{ env.PACKAGE_NAME }}"
+          npm pkg set name="${{ env.PACKAGE_NAME }}"
           npm pkg set version="${{ env.FULL_VERSION }}"
           npm pkg set repository.type=git
           npm pkg set repository.url=https://github.com/${{ github.repository }}.git
