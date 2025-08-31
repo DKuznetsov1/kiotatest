@@ -114,8 +114,8 @@ jobs:
         working-directory: API
         run: |
           cd typescript-client
-          echo "@${{ github.repository_owner }}:registry=https://npm.pkg.github.com" > typescript-client/.npmrc
-          echo "//npm.pkg.github.com/:_authToken=${NODE_AUTH_TOKEN}" >> typescript-client/.npmrc
+          echo "@${{ github.repository_owner }}:registry=https://npm.pkg.github.com" > .npmrc
+          echo "//npm.pkg.github.com/:_authToken=${NODE_AUTH_TOKEN}" >> .npmrc
       
       - name: Publish to GitHub npm registry
         working-directory: API
