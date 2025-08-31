@@ -12,7 +12,6 @@ on:
 jobs:
   generate-and-publish:
     runs-on: ubuntu-latest
-
     steps:
       - name: Build package name
         run: |
