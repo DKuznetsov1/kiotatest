@@ -14,9 +14,12 @@ jobs:
     runs-on: ubuntu-latest
     
     steps:
-      - name: Build package name
+      - name: Prepare vars
         run: |
-          PACKAGE_NAME="@${{ github.repository_owner }}/api-client"
+          LOWERCASE_OWNER=$(echo "${{ github.repository_owner }}" | tr '[:upper:]' '[:lower:]')
+          echo "LOWERCASE_OWNER=$LOWERCASE_OWNER" >> $GITHUB_ENV
+
+          PACKAGE_NAME="@${LOWERCASE_OWNER}/api-client"
           echo "PACKAGE_NAME=$PACKAGE_NAME" >> $GITHUB_ENV
 
       - name: Checkout repository
@@ -112,7 +115,7 @@ jobs:
       - name: Configure npm for GitHub Packages
         working-directory: API/typescript-client
         run: |
-          echo "@${{ github.repository_owner }}:registry=https://npm.pkg.github.com" > .npmrc
+          echo "@${{ env.LOWERCASE_OWNER }}:registry=https://npm.pkg.github.com" > .npmrc
           echo "//npm.pkg.github.com/:_authToken=${{ secrets.GITHUB_TOKEN }}" >> .npmrc
       
       - name: Publish to GitHub npm registry
