@@ -9,38 +9,18 @@ on:
       - master
   workflow_dispatch:
 
-permissions:
-  contents: write
-
 jobs:
   generate-and-publish:
     runs-on: ubuntu-latest
 
     steps:
+      - name: Build package name
+        run: |
+          PACKAGE_NAME="@${{ github.repository_owner }}/api-client"
+          echo "PACKAGE_NAME=$PACKAGE_NAME" >> $GITHUB_ENV
+
       - name: Checkout repository
         uses: actions/checkout@v4
-        with:
-          fetch-depth: 1
-
-      - name: Fetch all tags (without full history)
-        run: git fetch --tags
-
-      - name: Show current branch
-        run: git branch --show-current
-
-      - name: List tags
-        run: git tag
-
-      - name: Get latest tag
-        id: get_tag
-        uses: actions-ecosystem/action-get-latest-tag@v1.6.0
-        with:
-          semver_only: false
-
-      - name: Export latest tag to env
-        run: |
-          echo "LAST_TAG=${{ steps.get_tag.outputs.tag }}" >> $GITHUB_ENV
-          echo "Last tag: ${{ steps.get_tag.outputs.tag }}"
 
       - name: Setup .NET
         uses: actions/setup-dotnet@v4
@@ -66,79 +46,73 @@ jobs:
         run: sudo apt-get update && sudo apt-get install -y libxml2-utils
 
       - name: Extract version from .csproj
-        id: version
+        id: get-project-version
         run: |
           VERSION=$(xmllint --xpath "string(//Project/PropertyGroup/Version)" API/Api/Api.csproj)
           echo "VERSION=$VERSION" >> $GITHUB_ENV
           echo "Project version: $VERSION"
 
-      - name: Compare project version and last tag
+      - name: Calculate package version from npm
+        id: get-npm-version
         run: |
-          PROJECT_VERSION=${{ env.VERSION }}
-          LAST_TAG=${{ env.LAST_TAG }}
+          PACKAGE_NAME="@${{ env.PACKAGE_NAME }}"
+          echo "Fetching current published version for $PACKAGE_NAME..."
 
-          if [ -z "$LAST_TAG" ]; then
-            TAG_VERSION="0.0.0"
-            echo "No tags found. Using default tag version $TAG_VERSION = 0.0.0"
-          else
-            TAG_VERSION="${LAST_TAG#v}"
+          NPM_VERSION=$(npm view "$PACKAGE_NAME" version 2>/dev/null || echo "")
+          PROJECT_VERSION="${{ env.VERSION }}"
+
+          if [ -z "$NPM_VERSION" ]; then
+            echo "No version found in npm. Using project version: $PROJECT_VERSION"
+            echo "FULL_VERSION=$PROJECT_VERSION" >> $GITHUB_ENV
+            exit 0
           fi
 
-          echo "Comparing $PROJECT_VERSION vs $TAG_VERSION"
+          echo "Found published version in npm: $NPM_VERSION"
+          echo "Local project version: $PROJECT_VERSION"
 
-          if dpkg --compare-versions "$PROJECT_VERSION" gt "$TAG_VERSION"; then
-            cmp="gt"
-          elif dpkg --compare-versions "$PROJECT_VERSION" eq "$TAG_VERSION"; then
-            cmp="eq"
-          else
-            cmp="lt"
-          fi
+          # Extract MAJOR.MINOR
+          NPM_MM=$(echo "$NPM_VERSION" | cut -d. -f1,2)
+          PROJECT_MM=$(echo "$PROJECT_VERSION" | cut -d. -f1,2)
 
-          if [ "$cmp" = "gt" ]; then
-            echo "✅ Creating new tag v$PROJECT_VERSION"
-            git config user.name "github-actions"
-            git config user.email "github-actions@github.com"
-            git tag "v$PROJECT_VERSION"
-            git push origin "v$PROJECT_VERSION"
-          elif [ "$cmp" = "eq" ]; then
-            echo "✅ Tag already exists. Continuing."
+          if [ "$PROJECT_MM" = "$NPM_MM" ]; then
+            # Same MAJOR.MINOR → increment PATCH
+            NPM_PATCH=$(echo "$NPM_VERSION" | cut -d. -f3)
+            NEW_PATCH=$((NPM_PATCH + 1))
+            FINAL_VERSION="$PROJECT_MM.$NEW_PATCH"
+            echo "Matching MAJOR.MINOR. Incrementing patch: $FINAL_VERSION"
+            echo "FULL_VERSION=$FINAL_VERSION" >> $GITHUB_ENV
+          elif dpkg --compare-versions "$PROJECT_MM" gt "$NPM_MM"; then
+            # Project is ahead → use project version as-is
+            echo "Project MAJOR.MINOR > npm. Using project version: $PROJECT_VERSION"
+            echo "FULL_VERSION=$PROJECT_VERSION" >> $GITHUB_ENV
           else
-            echo "❌ Project version ($PROJECT_VERSION) is less than latest tag ($TAG_VERSION)"
+            echo "❌ Project version ($PROJECT_VERSION) is behind published npm version ($NPM_VERSION)"
             exit 1
           fi
 
       - name: Generate Swagger file
         run: |
-          swagger tofile --output swagger.json Api/bin/Debug/net8.0/Api.dll v1
-
-      - name: Calculate patch number
-        run: |
-          PATCH=$(git rev-list v${{ env.VERSION }}..HEAD --count)
-          MAJOR_MINOR=$(echo "${{ env.VERSION }}" | cut -d '.' -f 1,2)
-          FULL_VERSION="$MAJOR_MINOR.$PATCH"
-          echo "FULL_VERSION=$FULL_VERSION" >> $GITHUB_ENV
-          echo "Full version to use: $FULL_VERSION"
+          swagger tofile --output swagger.json API/Api/bin/Debug/net8.0/Api.dll v1
 
       - name: Update kiota clients in the repository
         run: kiota generate --language typescript --openapi ./swagger.json --output ./typescript-client --class-name ApiClient
         working-directory: API
-  
     
-     # - name: Generate TypeScript client via Kiota
-      #  run: |
-      #    mkdir -p typescript-client
-       #   kiota generate \
-       #     --language typescript \
-       #     --class-name ApiClient \
-       #     --namespace client \
-       #     --openapi swagger.json \
-       #     --output typescript-client
+     - name: Generate TypeScript client via Kiota
+       run: |
+         mkdir -p typescript-client
+         kiota generate \
+           --language typescript \
+           --class-name ApiClient \
+           --namespace client \
+           --openapi swagger.json \
+           --output typescript-client
 
       - name: Set version in package.json
         run: |
           cd typescript-client
           npm init -y
-          npm pkg set name="@${{ github.repository_owner }}/api-client"
+          npm pkg set name="@${{ env.PACKAGE_NAME }}"
           npm pkg set version="${{ env.FULL_VERSION }}"
           npm pkg set repository.type=git
           npm pkg set repository.url=https://github.com/${{ github.repository }}.git
