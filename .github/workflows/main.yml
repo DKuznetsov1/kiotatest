@@ -56,7 +56,7 @@ jobs:
           PACKAGE_NAME="${{ env.PACKAGE_NAME }}"
           echo "Fetching current published version for $PACKAGE_NAME..."
 
-          NPM_VERSION=$(npm view "$PACKAGE_NAME" version 2>/dev/null || echo "")
+          NPM_VERSION=$(npm view "$PACKAGE_NAME" version --registry=https://npm.pkg.github.com 2>/dev/null || echo "")
           echo "NPM version: $NPM_VERSION"
 
           PROJECT_VERSION="${{ env.VERSION }}"
