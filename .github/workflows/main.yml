@@ -50,46 +50,6 @@ jobs:
           echo "VERSION=$VERSION" >> $GITHUB_ENV
           echo "Project version: $VERSION"
 
-      - name: Calculate package version from npm
-        id: get-npm-version
-        run: |
-          PACKAGE_NAME="${{ env.PACKAGE_NAME }}"
-          echo "Fetching current published version for $PACKAGE_NAME..."
-
-          NPM_VERSION=$(npm view "$PACKAGE_NAME" version --registry=https://npm.pkg.github.com || echo "")
-          echo "NPM version: $NPM_VERSION"
-
-          PROJECT_VERSION="${{ env.VERSION }}"
-
-          if [ -z "$NPM_VERSION" ]; then
-            echo "No version found in npm. Using project version: $PROJECT_VERSION"
-            echo "FULL_VERSION=$PROJECT_VERSION" >> $GITHUB_ENV
-            exit 0
-          fi
-
-          echo "Found published version in npm: $NPM_VERSION"
-          echo "Local project version: $PROJECT_VERSION"
-
-          # Extract MAJOR.MINOR
-          NPM_MM=$(echo "$NPM_VERSION" | cut -d. -f1,2)
-          PROJECT_MM=$(echo "$PROJECT_VERSION" | cut -d. -f1,2)
-
-          if [ "$PROJECT_MM" = "$NPM_MM" ]; then
-            # Same MAJOR.MINOR → increment PATCH
-            NPM_PATCH=$(echo "$NPM_VERSION" | cut -d. -f3)
-            NEW_PATCH=$((NPM_PATCH + 1))
-            FINAL_VERSION="$PROJECT_MM.$NEW_PATCH"
-            echo "Matching MAJOR.MINOR. Incrementing patch: $FINAL_VERSION"
-            echo "FULL_VERSION=$FINAL_VERSION" >> $GITHUB_ENV
-          elif dpkg --compare-versions "$PROJECT_MM" gt "$NPM_MM"; then
-            # Project is ahead → use project version as-is
-            echo "Project MAJOR.MINOR > npm. Using project version: $PROJECT_VERSION"
-            echo "FULL_VERSION=$PROJECT_VERSION" >> $GITHUB_ENV
-          else
-            echo "❌ Project version ($PROJECT_VERSION) is behind published npm version ($NPM_VERSION)"
-            exit 1
-          fi
-
       - name: Build API project
         working-directory: API
         run: dotnet build Api/Api.csproj --configuration Release
@@ -128,6 +88,52 @@ jobs:
       - name: Build TypeScript
         working-directory: API/typescript-client
         run: npm run build
+
+      - name: Configure npm for GitHub Packages
+        working-directory: API/typescript-client
+        run: |
+          echo "@${{ env.LOWERCASE_OWNER }}:registry=https://npm.pkg.github.com" > .npmrc
+          echo "//npm.pkg.github.com/:_authToken=${{ secrets.NPM_PUBLISH_TOKEN }}" >> .npmrc
+
+      - name: Calculate package version from npm
+        working-directory: API/typescript-client
+        run: |
+          PACKAGE_NAME="${{ env.PACKAGE_NAME }}"
+          echo "Fetching current published version for $PACKAGE_NAME..."
+
+          NPM_VERSION=$(npm view "$PACKAGE_NAME" version || echo "")
+          echo "NPM version: $NPM_VERSION"
+
+          PROJECT_VERSION="${{ env.VERSION }}"
+
+          if [ -z "$NPM_VERSION" ]; then
+            echo "No version found in npm. Using project version: $PROJECT_VERSION"
+            echo "FULL_VERSION=$PROJECT_VERSION" >> $GITHUB_ENV
+            exit 0
+          fi
+
+          echo "Found published version in npm: $NPM_VERSION"
+          echo "Local project version: $PROJECT_VERSION"
+
+          # Extract MAJOR.MINOR
+          NPM_MM=$(echo "$NPM_VERSION" | cut -d. -f1,2)
+          PROJECT_MM=$(echo "$PROJECT_VERSION" | cut -d. -f1,2)
+
+          if [ "$PROJECT_MM" = "$NPM_MM" ]; then
+            # Same MAJOR.MINOR → increment PATCH
+            NPM_PATCH=$(echo "$NPM_VERSION" | cut -d. -f3)
+            NEW_PATCH=$((NPM_PATCH + 1))
+            FINAL_VERSION="$PROJECT_MM.$NEW_PATCH"
+            echo "Matching MAJOR.MINOR. Incrementing patch: $FINAL_VERSION"
+            echo "FULL_VERSION=$FINAL_VERSION" >> $GITHUB_ENV
+          elif dpkg --compare-versions "$PROJECT_MM" gt "$NPM_MM"; then
+            # Project is ahead → use project version as-is
+            echo "Project MAJOR.MINOR > npm. Using project version: $PROJECT_VERSION"
+            echo "FULL_VERSION=$PROJECT_VERSION" >> $GITHUB_ENV
+          else
+            echo "❌ Project version ($PROJECT_VERSION) is behind published npm version ($NPM_VERSION)"
+            exit 1
+          fi
     
       - name: Set version in package.json
         working-directory: API/typescript-client
@@ -144,12 +150,6 @@ jobs:
 
           cat package.json
 
-      - name: Configure npm for GitHub Packages
-        working-directory: API/typescript-client
-        run: |
-          echo "@${{ env.LOWERCASE_OWNER }}:registry=https://npm.pkg.github.com" > .npmrc
-          echo "//npm.pkg.github.com/:_authToken=${{ secrets.NPM_PUBLISH_TOKEN }}" >> .npmrc
-      
       - name: Publish to GitHub npm registry
         working-directory: API/typescript-client
         run: |
