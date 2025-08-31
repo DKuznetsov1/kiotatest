@@ -99,9 +99,8 @@ jobs:
         run: kiota generate --language typescript --openapi ./swagger.json --output ./typescript-client --class-name ApiClient
     
       - name: Set version in package.json
-        working-directory: API
+        working-directory: API/typescript-client
         run: |
-          cd typescript-client
           npm init -y
           npm pkg set name="${{ env.PACKAGE_NAME }}"
           npm pkg set version="${{ env.FULL_VERSION }}"
@@ -111,14 +110,12 @@ jobs:
           cat package.json
 
       - name: Configure npm for GitHub Packages
-        working-directory: API
+        working-directory: API/typescript-client
         run: |
-          cd typescript-client
           echo "@${{ github.repository_owner }}:registry=https://npm.pkg.github.com" > .npmrc
-          echo "//npm.pkg.github.com/:_authToken=${NODE_AUTH_TOKEN}" >> .npmrc
+          echo "//npm.pkg.github.com/:_authToken=${{ secrets.GITHUB_TOKEN }}" >> .npmrc
       
       - name: Publish to GitHub npm registry
-        working-directory: API
+        working-directory: API/typescript-client
         run: |
-          cd typescript-client
           npm publish --access public
