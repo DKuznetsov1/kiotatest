@@ -106,13 +106,14 @@ jobs:
           npm pkg set name="${{ env.PACKAGE_NAME }}"
           npm pkg set version="${{ env.FULL_VERSION }}"
           npm pkg set repository.type=git
-          npm pkg set repository.url=https://github.com/${{ github.repository }}.git
+          npm pkg set repository.url=git+https://github.com/${{ github.repository }}.git
 
           cat package.json
 
       - name: Configure npm for GitHub Packages
         working-directory: API
         run: |
+          cd typescript-client
           echo "@${{ github.repository_owner }}:registry=https://npm.pkg.github.com" > typescript-client/.npmrc
           echo "//npm.pkg.github.com/:_authToken=${NODE_AUTH_TOKEN}" >> typescript-client/.npmrc
       
