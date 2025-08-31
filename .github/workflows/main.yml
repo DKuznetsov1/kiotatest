@@ -101,16 +101,6 @@ jobs:
         run: kiota generate --language typescript --openapi ./swagger.json --output ./typescript-client --class-name ApiClient
         working-directory: API
     
-      - name: Generate TypeScript client via Kiota
-        run: |
-          mkdir -p typescript-client
-          kiota generate \
-            --language typescript \
-            --class-name ApiClient \
-            --namespace client \
-            --openapi swagger.json \
-            --output typescript-client
-
       - name: Set version in package.json
         run: |
           cd typescript-client
