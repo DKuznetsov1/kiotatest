@@ -100,6 +100,43 @@ jobs:
       - name: Update kiota clients in the repository
         working-directory: API
         run: kiota generate --language typescript --openapi ./swagger.json --output ./typescript-client --class-name ApiClient
+
+      - name: Set version in package.json
+        working-directory: API/typescript-client
+        run: |
+          npm init -y
+          npm pkg set name="${{ env.PACKAGE_NAME }}"
+          npm pkg set version="${{ env.FULL_VERSION }}"
+          npm pkg set repository.type=git
+          npm pkg set repository.url=git+https://github.com/${{ github.repository }}.git
+
+          cat package.json
+
+      - name: Prepare TypeScript build
+        working-directory: API/typescript-client
+        run: |
+          cat <<EOF > tsconfig.json
+          {
+            "compilerOptions": {
+              "module": "ESNext",
+              "target": "ESNext",
+              "outDir": "dist",
+              "rootDir": "./",
+              "declaration": true,
+              "esModuleInterop": true,
+              "strict": true,
+              "skipLibCheck": true
+            },
+            "include": ["api", "models", "apiClient.ts"]
+          }
+          EOF
+
+          npm install typescript --save-dev
+          npm pkg set scripts.build="tsc"
+
+      - name: Build TypeScript
+        working-directory: API/typescript-client
+        run: npm run build
     
       - name: Set version in package.json
         working-directory: API/typescript-client
@@ -109,6 +146,10 @@ jobs:
           npm pkg set version="${{ env.FULL_VERSION }}"
           npm pkg set repository.type=git
           npm pkg set repository.url=git+https://github.com/${{ github.repository }}.git
+          npm pkg set main dist/apiClient.js
+          npm pkg set types dist/apiClient.d.ts
+          npm pkg set files[0]=dist
+          npm pkg set license=MIT
 
           cat package.json
 
