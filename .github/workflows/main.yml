@@ -34,7 +34,7 @@ jobs:
       - name: Get last tag via git describe
         id: lasttag
         run: |
-          LAST_TAG=$(git describe --abbrev=0 --tags --all 2>/dev/null || echo "")
+          LAST_TAG=$(git describe --abbrev=0 --tags 2>/dev/null || echo "")
           echo "LAST_TAG=$LAST_TAG" >> $GITHUB_ENV
           echo "Last tag: $LAST_TAG"
 
